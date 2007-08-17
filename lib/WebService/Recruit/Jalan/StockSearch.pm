@@ -1,20 +1,13 @@
 package WebService::Recruit::Jalan::StockSearch;
 use strict;
 use vars qw( $VERSION );
-use base qw( WebService::Recruit::Jalan::API );
-$VERSION = '0.07';
+use base qw( WebService::Recruit::Jalan::Base );
+$VERSION = '0.10';
 
 sub url { 'http://jws.jalan.net/APIAdvance/StockSearch/V1/'; }
-sub force_array { [qw(
-    Plan Facility PlanPictureURL PlanPictureCaption Stay Date
-)]; }
-sub elem_class { 'WebService::Recruit::Jalan::StockSearch::Element'; }
-sub query_class { 'WebService::Recruit::Jalan::StockSearch::Query'; }
 
-package WebService::Recruit::Jalan::StockSearch::Query;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw(
+sub query_class { 'WebService::Recruit::Jalan::StockSearch::Query'; }
+sub query_fields { [qw(
     key reg pref l_area s_area h_id o_area_id o_id x y range h_name
     stay_date stay_count room_count adult_num sc_num lc_num_bed_meal
     lc_num_meal_only lc_num_bed_only lc_num_no_bed_meal min_rate
@@ -27,58 +20,51 @@ __PACKAGE__->mk_accessors(qw(
     b_only d_only 2_meals sng_room twn_room dbl_room tri_room 4bed_room
     jpn_room j_w_room child_price c_bed_meal c_no_bed_meal c_meal_only
     c_bed_only pict_size picts order start count
-));
+)]; }
+sub notnull_param { [qw( key )]; }
 
-package WebService::Recruit::Jalan::StockSearch::Element;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw( Results ));
+sub elem_class { 'WebService::Recruit::Jalan::StockSearch::Element'; }
+sub root_elem { 'Results'; }
+sub elem_fields { {
+    Results => [qw(
+        NumberOfResults DisplayPerPage DisplayFrom APIVersion Plan
+    )],
+    Plan => [qw(
+        PlanName RoomName PlanDetailURL Facilities PlanCheckIn PlanCheckOut
+        PlanPictureURL PlanPictureCaption Meal RateType SampleRate Stay Hotel
+    )],
+    Facilities => [qw(
+        Facility
+    )],
+    Stay => [qw(
+        PlanDetailURL Date
+    )],
+    Date => [qw(
+        date month year Rate Stock
+    )],
+    Hotel => [qw(
+        HotelID HotelName PostCode HotelAddress Area HotelType
+        HotelDetailURL HotelCatchCopy HotelCaption PictureURL
+        PictureCaption X Y HotelNameKana NumberOfRatings Rating
+    )],
+    Area => [qw(
+        Region Prefecture LargeArea SmallArea
+    )],
+}; }
+sub force_array { [qw(
+    Plan Facility PlanPictureURL PlanPictureCaption Stay Date
+)]; }
 
-package WebService::Recruit::Jalan::StockSearch::Element::Results;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw(
-    NumberOfResults DisplayPerPage DisplayFrom APIVersion Plan
-));
+# __PACKAGE__->mk_query_accessors();
 
-package WebService::Recruit::Jalan::StockSearch::Element::Plan;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw(
-    PlanName RoomName PlanDetailURL Facilities PlanCheckIn PlanCheckOut
-    PlanPictureURL PlanPictureCaption Meal RateType SampleRate Stay Hotel
-));
+@WebService::Recruit::Jalan::StockSearch::Query::ISA = qw( Class::Accessor::Fast );
+WebService::Recruit::Jalan::StockSearch::Query->mk_accessors( @{query_fields()} );
 
-package WebService::Recruit::Jalan::StockSearch::Element::Facilities;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw( Facility ));
+# __PACKAGE__->mk_elem_accessors();
 
-package WebService::Recruit::Jalan::StockSearch::Element::Stay;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw(
-    PlanDetailURL Date
-));
-
-package WebService::Recruit::Jalan::StockSearch::Element::Date;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw( date month year Rate Stock ));
-
-package WebService::Recruit::Jalan::StockSearch::Element::Hotel;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw(
-    HotelID HotelName PostCode HotelAddress Area HotelType
-    HotelDetailURL HotelCatchCopy HotelCaption PictureURL
-    PictureCaption X Y HotelNameKana NumberOfRatings Rating
-));
-
-package WebService::Recruit::Jalan::StockSearch::Element::Area;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw( Region Prefecture LargeArea SmallArea ));
+@WebService::Recruit::Jalan::StockSearch::Element::ISA = qw( Class::Accessor::Children::Fast );
+WebService::Recruit::Jalan::StockSearch::Element->mk_ro_accessors( root_elem() );
+WebService::Recruit::Jalan::StockSearch::Element->mk_child_ro_accessors( %{elem_fields()} );
 
 =head1 NAME
 
@@ -106,11 +92,10 @@ WebService::Recruit::Jalan::StockSearch - Jalan Web Service "StockSearch" API
         print "HotelName: ", $plan->Hotel->HotelName, "\n";
     }
 
-    my $root = $res->root;
-
 =head1 DESCRIPTION
 
-The request to this API requires one or some of query parameters below:
+This module is a interface for the C<StockSearch> API.
+It accepts following query parameters to make an request.
 
     my $param = {
         reg             =>  '10',
@@ -211,57 +196,114 @@ The request to this API requires one or some of query parameters below:
         count           =>  '10',
     };
 
-The response from this API is tree structured and provides methods below:
+C<$jalan> above is an instance of L<WebService::Recruit::Jalan>.
 
-    $root->NumberOfResults
-    $root->DisplayPerPage
-    $root->DisplayFrom
-    $root->APIVersion
-    $root->Plan
-    $root->Plan->[0]->PlanName
-    $root->Plan->[0]->RoomName
-    $root->Plan->[0]->PlanDetailURL
-    $root->Plan->[0]->Facilities
-    $root->Plan->[0]->Facilities->Facility->[0]
-    $root->Plan->[0]->PlanCheckIn
-    $root->Plan->[0]->PlanCheckOut
-    $root->Plan->[0]->PlanPictureURL
-    $root->Plan->[0]->PlanPictureCaption
-    $root->Plan->[0]->Meal
-    $root->Plan->[0]->RateType
-    $root->Plan->[0]->SampleRate
-    $root->Plan->[0]->Stay
-    $root->Plan->[0]->Stay->[0]->PlanDetailURL
-    $root->Plan->[0]->Stay->[0]->Date
-    $root->Plan->[0]->Stay->[0]->Date->[0]->date
-    $root->Plan->[0]->Stay->[0]->Date->[0]->month
-    $root->Plan->[0]->Stay->[0]->Date->[0]->year
-    $root->Plan->[0]->Stay->[0]->Date->[0]->Rate
-    $root->Plan->[0]->Stay->[0]->Date->[0]->Stock
-    $root->Plan->[0]->Hotel
-    $root->Plan->[0]->Hotel->HotelID
-    $root->Plan->[0]->Hotel->HotelName
-    $root->Plan->[0]->Hotel->PostCode
-    $root->Plan->[0]->Hotel->HotelAddress
-    $root->Plan->[0]->Hotel->Area
-    $root->Plan->[0]->Hotel->Area->Region
-    $root->Plan->[0]->Hotel->Area->Prefecture
-    $root->Plan->[0]->Hotel->Area->LargeArea
-    $root->Plan->[0]->Hotel->Area->SmallArea
-    $root->Plan->[0]->Hotel->HotelType
-    $root->Plan->[0]->Hotel->HotelDetailURL
-    $root->Plan->[0]->Hotel->HotelCatchCopy
-    $root->Plan->[0]->Hotel->HotelCaption
-    $root->Plan->[0]->Hotel->PictureURL
-    $root->Plan->[0]->Hotel->PictureCaption
-    $root->Plan->[0]->Hotel->X
-    $root->Plan->[0]->Hotel->Y
-    $root->Plan->[0]->Hotel->HotelNameKana
-    $root->Plan->[0]->Hotel->NumberOfRatings
-    $root->Plan->[0]->Hotel->Rating
+=head1 METHODS
 
-And paging methods are provided, see L<WebService::Recruit::Jalan/PAGING>.
-This module is based on L<XML::OverHTTP>.
+=head2 root
+
+This returns the root element of the response.
+
+    my $root = $res->root;
+
+You can retrieve each element by the following accessors.
+
+    $root->NumberOfResults;
+    $root->DisplayPerPage;
+    $root->DisplayFrom;
+    $root->APIVersion;
+    $root->Plan;
+    $root->Plan->[0]->PlanName;
+    $root->Plan->[0]->RoomName;
+    $root->Plan->[0]->PlanDetailURL;
+    $root->Plan->[0]->Facilities;
+    $root->Plan->[0]->Facilities->Facility->[0];
+    $root->Plan->[0]->PlanCheckIn;
+    $root->Plan->[0]->PlanCheckOut;
+    $root->Plan->[0]->PlanPictureURL;
+    $root->Plan->[0]->PlanPictureCaption;
+    $root->Plan->[0]->Meal;
+    $root->Plan->[0]->RateType;
+    $root->Plan->[0]->SampleRate;
+    $root->Plan->[0]->Stay;
+    $root->Plan->[0]->Stay->[0]->PlanDetailURL;
+    $root->Plan->[0]->Stay->[0]->Date;
+    $root->Plan->[0]->Stay->[0]->Date->[0]->date;
+    $root->Plan->[0]->Stay->[0]->Date->[0]->month;
+    $root->Plan->[0]->Stay->[0]->Date->[0]->year;
+    $root->Plan->[0]->Stay->[0]->Date->[0]->Rate;
+    $root->Plan->[0]->Stay->[0]->Date->[0]->Stock;
+    $root->Plan->[0]->Hotel;
+    $root->Plan->[0]->Hotel->HotelID;
+    $root->Plan->[0]->Hotel->HotelName;
+    $root->Plan->[0]->Hotel->PostCode;
+    $root->Plan->[0]->Hotel->HotelAddress;
+    $root->Plan->[0]->Hotel->Area;
+    $root->Plan->[0]->Hotel->Area->Region;
+    $root->Plan->[0]->Hotel->Area->Prefecture;
+    $root->Plan->[0]->Hotel->Area->LargeArea;
+    $root->Plan->[0]->Hotel->Area->SmallArea;
+    $root->Plan->[0]->Hotel->HotelType;
+    $root->Plan->[0]->Hotel->HotelDetailURL;
+    $root->Plan->[0]->Hotel->HotelCatchCopy;
+    $root->Plan->[0]->Hotel->HotelCaption;
+    $root->Plan->[0]->Hotel->PictureURL;
+    $root->Plan->[0]->Hotel->PictureCaption;
+    $root->Plan->[0]->Hotel->X;
+    $root->Plan->[0]->Hotel->Y;
+    $root->Plan->[0]->Hotel->HotelNameKana;
+    $root->Plan->[0]->Hotel->NumberOfRatings;
+    $root->Plan->[0]->Hotel->Rating;
+
+=head2 xml
+
+This returns the raw response context itself.
+
+    print $res->xml, "\n";
+
+=head2 code
+
+This returns the response status code.
+
+    my $code = $res->code; # usually "200" when succeeded
+
+=head2 is_error
+
+This returns true value when the response has an error.
+
+    die 'error!' if $res->is_error;
+
+=head2 page
+
+This returns a L<Data::Page> instance.
+
+    my $page = $res->page();
+    print "Total: ", $page->total_entries, "\n";
+    print "Page: ", $page->current_page, "\n";
+    print "Last: ", $page->last_page, "\n";
+
+=head2 pageset
+
+This returns a L<Data::Pageset> instance.
+
+    my $pageset = $res->pageset( 'fixed' );
+    $pageset->pages_per_set($pages_per_set);
+    my $set = $pageset->pages_in_set();
+    foreach my $num ( @$set ) {
+        print "$num ";
+    }
+
+=head2 page_param
+
+This returns a hash to specify the page for the next request.
+
+    my %hash = $res->page_param( $page->next_page );
+
+=head2 page_query
+
+This returns a query string to specify the page for the next request.
+
+    my $query = $res->page_query( $page->prev_page );
 
 =head1 SEE ALSO
 
@@ -271,7 +313,7 @@ L<WebService::Recruit::Jalan>
 
 Yusuke Kawasaki L<http://www.kawa.net/>
 
-This module is unofficial and released by the authour in person.
+This module is unofficial and released by the author in person.
 
 =head1 COPYRIGHT AND LICENSE
 

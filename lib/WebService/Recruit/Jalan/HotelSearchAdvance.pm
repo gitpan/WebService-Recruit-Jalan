@@ -1,21 +1,13 @@
 package WebService::Recruit::Jalan::HotelSearchAdvance;
 use strict;
 use vars qw( $VERSION );
-use base qw( WebService::Recruit::Jalan::API );
-$VERSION = '0.07';
+use base qw( WebService::Recruit::Jalan::Base );
+$VERSION = '0.10';
 
 sub url { 'http://jws.jalan.net/APIAdvance/HotelSearch/V1/'; }
-sub force_array { [qw(
-    Hotel PictureURL PictureCaption AccessInformation
-    Plan RoomType PlanPictureURL PlanPictureCaption
-)]; }
-sub elem_class { 'WebService::Recruit::Jalan::HotelSearchAdvance::Element'; }
-sub query_class { 'WebService::Recruit::Jalan::HotelSearchAdvance::Query'; }
 
-package WebService::Recruit::Jalan::HotelSearchAdvance::Query;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw(
+sub query_class { 'WebService::Recruit::Jalan::HotelSearchAdvance::Query'; }
+sub query_fields { [qw(
     key reg pref l_area s_area h_id o_area_id o_id x y range h_name
     h_type o_pool parking pub_bath onsen prv_bath v_bath sauna jacz
     mssg r_ski r_brd pet esthe p_pong limo room_b room_d prv_b prv_d
@@ -26,60 +18,54 @@ __PACKAGE__->mk_accessors(qw(
     sng_room twn_room dbl_room tri_room 4bed_room jpn_room j_w_room
     child_price c_bed_meal c_no_bed_meal c_meal_only c_bed_only
     pict_size picts order start count xml_ptn
-));
+)]; }
+sub notnull_param { [qw( key )]; }
 
-package WebService::Recruit::Jalan::HotelSearchAdvance::Element;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw( Results ));
+sub elem_class { 'WebService::Recruit::Jalan::HotelSearchAdvance::Element'; }
+sub root_elem { 'Results'; }
+sub elem_fields { {
+    Results => [qw(
+        NumberOfResults DisplayPerPage DisplayFrom APIVersion Hotel
+    )],
+    Hotel => [qw(
+        HotelID HotelName PostCode HotelAddress Area HotelType
+        HotelDetailURL HotelCatchCopy HotelCaption PictureURL
+        PictureCaption AccessInformation CheckInTime CheckOutTime
+        X Y SampleRateFrom LastUpdate OnsenName HotelNameKana
+        CreditCard NumberOfRatings Rating Plan
+    )],
+    Area => [qw(
+         Region Prefecture LargeArea SmallArea
+    )],
+    AccessInformation => [qw(
+         name _text
+    )],
+    LastUpdate => [qw(
+         day month year
+    )],
+    CreditCard => [qw(
+        AMEX DC DINNERS ETC JCB MASTER MILLION  NICOS SAISON UC UFJ VISA _text
+    )],
+    Plan => [qw(
+        PlanName RoomType RoomName PlanCheckIn PlanCheckOut PlanPictureURL
+        PlanPictureCaption Meal PlanSampleRateFrom
+    )],
+}; }
+sub force_array { [qw(
+    Hotel PictureURL PictureCaption AccessInformation
+    Plan RoomType PlanPictureURL PlanPictureCaption
+)]; }
 
-package WebService::Recruit::Jalan::HotelSearchAdvance::Element::Results;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw(
-    NumberOfResults DisplayPerPage DisplayFrom APIVersion Hotel
-));
+# __PACKAGE__->mk_query_accessors();
 
-package WebService::Recruit::Jalan::HotelSearchAdvance::Element::Hotel;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw(
-    HotelID HotelName PostCode HotelAddress Area HotelType
-    HotelDetailURL HotelCatchCopy HotelCaption PictureURL
-    PictureCaption AccessInformation CheckInTime CheckOutTime
-    X Y SampleRateFrom LastUpdate OnsenName HotelNameKana
-    CreditCard NumberOfRatings Rating Plan
-));
+@WebService::Recruit::Jalan::HotelSearchAdvance::Query::ISA = qw( Class::Accessor::Fast );
+WebService::Recruit::Jalan::HotelSearchAdvance::Query->mk_accessors( @{query_fields()} );
 
-package WebService::Recruit::Jalan::HotelSearchAdvance::Element::Area;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw( Region Prefecture LargeArea SmallArea ));
+# __PACKAGE__->mk_elem_accessors();
 
-package WebService::Recruit::Jalan::HotelSearchAdvance::Element::AccessInformation;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw( name _text ));
-
-package WebService::Recruit::Jalan::HotelSearchAdvance::Element::LastUpdate;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw( day month year ));
-
-package WebService::Recruit::Jalan::HotelSearchAdvance::Element::CreditCard;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw(
-    AMEX DC DINNERS ETC JCB MASTER MILLION  NICOS SAISON UC UFJ VISA _text
-));
-
-package WebService::Recruit::Jalan::HotelSearchAdvance::Element::Plan;
-use strict;
-use base qw( Class::Accessor::Fast );
-__PACKAGE__->mk_accessors(qw(
-    PlanName RoomType RoomName PlanCheckIn PlanCheckOut PlanPictureURL
-    PlanPictureCaption Meal PlanSampleRateFrom
-));
+@WebService::Recruit::Jalan::HotelSearchAdvance::Element::ISA = qw( Class::Accessor::Children::Fast );
+WebService::Recruit::Jalan::HotelSearchAdvance::Element->mk_ro_accessors( root_elem() );
+WebService::Recruit::Jalan::HotelSearchAdvance::Element->mk_child_ro_accessors( %{elem_fields()} );
 
 =head1 NAME
 
@@ -105,11 +91,10 @@ WebService::Recruit::Jalan::HotelSearchAdvance - Jalan Web Service "HotelSearchA
         print "HotelName: ", $hotel->HotelName, "\n";
     }
 
-    my $root = $res->root;
-
 =head1 DESCRIPTION
 
-The request to this API requires one or some of query parameters below:
+This module is a interface for the C<HotelSearchAdvance> API.
+It accepts following query parameters to make an request.
 
     my $param = {
         reg         =>  '10',
@@ -200,69 +185,126 @@ The request to this API requires one or some of query parameters below:
         xml_ptn     =>  '2',
     };
 
-The response from this API is tree structured and provides methods below:
+C<$jalan> above is an instance of L<WebService::Recruit::Jalan>.
 
-    $root->NumberOfResults
-    $root->DisplayPerPage
-    $root->DisplayFrom
-    $root->APIVersion
-    $root->Hotel
-    $root->Hotel->[0]->HotelID
-    $root->Hotel->[0]->HotelName
-    $root->Hotel->[0]->PostCode
-    $root->Hotel->[0]->HotelAddress
-    $root->Hotel->[0]->Area
-    $root->Hotel->[0]->Area->Region
-    $root->Hotel->[0]->Area->Prefecture
-    $root->Hotel->[0]->Area->LargeArea
-    $root->Hotel->[0]->Area->SmallArea
-    $root->Hotel->[0]->HotelType
-    $root->Hotel->[0]->HotelDetailURL
-    $root->Hotel->[0]->HotelCatchCopy
-    $root->Hotel->[0]->HotelCaption
-    $root->Hotel->[0]->PictureURL->[0]
-    $root->Hotel->[0]->PictureCaption->[0]
-    $root->Hotel->[0]->AccessInformation
-    $root->Hotel->[0]->AccessInformation->[0]->name
-    $root->Hotel->[0]->CheckInTime
-    $root->Hotel->[0]->CheckOutTime
-    $root->Hotel->[0]->X
-    $root->Hotel->[0]->Y
-    $root->Hotel->[0]->SampleRateFrom
-    $root->Hotel->[0]->LastUpdate
-    $root->Hotel->[0]->LastUpdate->day
-    $root->Hotel->[0]->LastUpdate->month
-    $root->Hotel->[0]->LastUpdate->year
-    $root->Hotel->[0]->OnsenName
-    $root->Hotel->[0]->HotelNameKana
-    $root->Hotel->[0]->CreditCard
-    $root->Hotel->[0]->CreditCard->AMEX
-    $root->Hotel->[0]->CreditCard->DC
-    $root->Hotel->[0]->CreditCard->DINNERS
-    $root->Hotel->[0]->CreditCard->ETC
-    $root->Hotel->[0]->CreditCard->JCB
-    $root->Hotel->[0]->CreditCard->MASTER
-    $root->Hotel->[0]->CreditCard->MILLION
-    $root->Hotel->[0]->CreditCard->NICOS
-    $root->Hotel->[0]->CreditCard->SAISON
-    $root->Hotel->[0]->CreditCard->UC
-    $root->Hotel->[0]->CreditCard->UFJ
-    $root->Hotel->[0]->CreditCard->VISA
-    $root->Hotel->[0]->NumberOfRatings
-    $root->Hotel->[0]->Rating
-    $root->Hotel->[0]->Plan
-    $root->Hotel->[0]->Plan->[0]->PlanName
-    $root->Hotel->[0]->Plan->[0]->RoomType->[0]
-    $root->Hotel->[0]->Plan->[0]->RoomName
-    $root->Hotel->[0]->Plan->[0]->PlanCheckIn
-    $root->Hotel->[0]->Plan->[0]->PlanCheckOut
-    $root->Hotel->[0]->Plan->[0]->PlanPictureURL
-    $root->Hotel->[0]->Plan->[0]->PlanPictureCaption
-    $root->Hotel->[0]->Plan->[0]->Meal
-    $root->Hotel->[0]->Plan->[0]->PlanSampleRateFrom
+=head1 METHODS
 
-And paging methods are provided, see L<WebService::Recruit::Jalan/PAGING>.
-This module is based on L<XML::OverHTTP>.
+=head2 root
+
+This returns the root element of the response.
+
+    my $root = $res->root;
+
+You can retrieve each element by the following accessors.
+
+    $root->NumberOfResults;
+    $root->DisplayPerPage;
+    $root->DisplayFrom;
+    $root->APIVersion;
+    $root->Hotel;
+    $root->Hotel->[0]->HotelID;
+    $root->Hotel->[0]->HotelName;
+    $root->Hotel->[0]->PostCode;
+    $root->Hotel->[0]->HotelAddress;
+    $root->Hotel->[0]->Area;
+    $root->Hotel->[0]->Area->Region;
+    $root->Hotel->[0]->Area->Prefecture;
+    $root->Hotel->[0]->Area->LargeArea;
+    $root->Hotel->[0]->Area->SmallArea;
+    $root->Hotel->[0]->HotelType;
+    $root->Hotel->[0]->HotelDetailURL;
+    $root->Hotel->[0]->HotelCatchCopy;
+    $root->Hotel->[0]->HotelCaption;
+    $root->Hotel->[0]->PictureURL->[0];
+    $root->Hotel->[0]->PictureCaption->[0];
+    $root->Hotel->[0]->AccessInformation;
+    $root->Hotel->[0]->AccessInformation->[0]->name;
+    $root->Hotel->[0]->CheckInTime;
+    $root->Hotel->[0]->CheckOutTime;
+    $root->Hotel->[0]->X;
+    $root->Hotel->[0]->Y;
+    $root->Hotel->[0]->SampleRateFrom;
+    $root->Hotel->[0]->LastUpdate;
+    $root->Hotel->[0]->LastUpdate->day;
+    $root->Hotel->[0]->LastUpdate->month;
+    $root->Hotel->[0]->LastUpdate->year;
+    $root->Hotel->[0]->OnsenName;
+    $root->Hotel->[0]->HotelNameKana;
+    $root->Hotel->[0]->CreditCard;
+    $root->Hotel->[0]->CreditCard->AMEX;
+    $root->Hotel->[0]->CreditCard->DC;
+    $root->Hotel->[0]->CreditCard->DINNERS;
+    $root->Hotel->[0]->CreditCard->ETC;
+    $root->Hotel->[0]->CreditCard->JCB;
+    $root->Hotel->[0]->CreditCard->MASTER;
+    $root->Hotel->[0]->CreditCard->MILLION;
+    $root->Hotel->[0]->CreditCard->NICOS;
+    $root->Hotel->[0]->CreditCard->SAISON;
+    $root->Hotel->[0]->CreditCard->UC;
+    $root->Hotel->[0]->CreditCard->UFJ;
+    $root->Hotel->[0]->CreditCard->VISA;
+    $root->Hotel->[0]->NumberOfRatings;
+    $root->Hotel->[0]->Rating;
+    $root->Hotel->[0]->Plan;
+    $root->Hotel->[0]->Plan->[0]->PlanName;
+    $root->Hotel->[0]->Plan->[0]->RoomType->[0];
+    $root->Hotel->[0]->Plan->[0]->RoomName;
+    $root->Hotel->[0]->Plan->[0]->PlanCheckIn;
+    $root->Hotel->[0]->Plan->[0]->PlanCheckOut;
+    $root->Hotel->[0]->Plan->[0]->PlanPictureURL;
+    $root->Hotel->[0]->Plan->[0]->PlanPictureCaption;
+    $root->Hotel->[0]->Plan->[0]->Meal;
+    $root->Hotel->[0]->Plan->[0]->PlanSampleRateFrom;
+
+=head2 xml
+
+This returns the raw response context itself.
+
+    print $res->xml, "\n";
+
+=head2 code
+
+This returns the response status code.
+
+    my $code = $res->code; # usually "200" when succeeded
+
+=head2 is_error
+
+This returns true value when the response has an error.
+
+    die 'error!' if $res->is_error;
+
+=head2 page
+
+This returns a L<Data::Page> instance.
+
+    my $page = $res->page();
+    print "Total: ", $page->total_entries, "\n";
+    print "Page: ", $page->current_page, "\n";
+    print "Last: ", $page->last_page, "\n";
+
+=head2 pageset
+
+This returns a L<Data::Pageset> instance.
+
+    my $pageset = $res->pageset( 'fixed' );
+    $pageset->pages_per_set($pages_per_set);
+    my $set = $pageset->pages_in_set();
+    foreach my $num ( @$set ) {
+        print "$num ";
+    }
+
+=head2 page_param
+
+This returns a hash to specify the page for the next request.
+
+    my %hash = $res->page_param( $page->next_page );
+
+=head2 page_query
+
+This returns a query string to specify the page for the next request.
+
+    my $query = $res->page_query( $page->prev_page );
 
 =head1 SEE ALSO
 
@@ -272,7 +314,7 @@ L<WebService::Recruit::Jalan>
 
 Yusuke Kawasaki L<http://www.kawa.net/>
 
-This module is unofficial and released by the authour in person.
+This module is unofficial and released by the author in person.
 
 =head1 COPYRIGHT AND LICENSE
 

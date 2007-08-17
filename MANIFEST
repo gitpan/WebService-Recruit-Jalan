@@ -1,12 +1,14 @@
 lib/WebService/Recruit/Jalan.pm
-lib/WebService/Recruit/Jalan/HotelSearchLite.pm
-lib/WebService/Recruit/Jalan/HotelSearchAdvance.pm
 lib/WebService/Recruit/Jalan/AreaSearch.pm
+lib/WebService/Recruit/Jalan/Base.pm
+lib/WebService/Recruit/Jalan/HotelSearchAdvance.pm
+lib/WebService/Recruit/Jalan/HotelSearchLite.pm
 lib/WebService/Recruit/Jalan/OnsenSearch.pm
 lib/WebService/Recruit/Jalan/StockSearch.pm
 META.yml
 MANIFEST
 Makefile.PL
+README
 Changes
 make-dist.sh
 t/00_pod.t
